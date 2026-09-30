@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>きもちの器 v0.8 natural</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yomogi&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  min-height:100%;
+  touch-action:manipulation;
+}
+body{
+  font-family:"Zen Maru Gothic",-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif;
+  color:#514d5b;
+  background:
+    radial-gradient(circle at 15% 8%,rgba(255,214,232,.7),transparent 28%),
+    radial-gradient(circle at 88% 15%,rgba(218,207,255,.65),transparent 30%),
+    linear-gradient(180deg,#fffaff 0%,#f7f3ff 52%,#fff8fb 100%);
+}
+main{
+  max-width:520px;
+  margin:0 auto;
+  padding:18px 14px 24px;
+}
+.head{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:9px;
+  color:#8b8594;
+  font-size:19px;
+  font-weight:500;
+  padding-right:4px;
+}
+.total{font-size:36px;font-weight:700;line-height:1;color:#4d4855}
+.total-deco{
+  font-size:13px;
+  line-height:1;
+  opacity:.95;
+  transform:translateY(-8px) rotate(-8deg);
+  filter:drop-shadow(0 0 3px rgba(255,255,255,.9));
+}
+.total-deco-right{
+  font-size:11px;
+  transform:translateY(7px) rotate(8deg);
+  opacity:.9;
+}
+
+.stage{
+  --glass-side:10%;
+  /* 器の「底の長さ」に合わせるため、側面とは別に設定 */
+  --floor-side:14%;
+  position:relative;
+  width:min(100%,430px);
+  aspect-ratio:1/1;
+  min-height:280px;
+  margin:4px auto 14px;
+  overflow:hidden;
+  isolation:isolate;
+}
+.stage::before,
+.stage::after{
+  content:"✦";
+  position:absolute;
+  color:rgba(177,157,215,.62);
+  font-size:15px;
+  z-index:5;
+  pointer-events:none;
+  animation:twinkle 2.8s ease-in-out infinite;
+}
+.stage::before{left:3%;top:21%}
+.stage::after{right:3%;top:34%;font-size:11px;animation-delay:.8s}
+
+.glass{
+  position:absolute;
+  left:var(--glass-side);
+  right:var(--glass-side);
+  top:5%;
+  bottom:4%;
+  border:5px solid rgba(164,160,176,.46);
+  border-radius:22% 22% 34% 34% / 13% 13% 40% 40%;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.78),rgba(241,235,249,.18)),
+    radial-gradient(circle at 35% 25%,rgba(255,255,255,.72),transparent 38%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.78),
+    inset 0 0 0 2px rgba(190,182,205,.12),
+    inset 12px 0 22px rgba(255,255,255,.28),
+    inset -12px 0 22px rgba(216,202,232,.12),
+    0 8px 22px rgba(132,117,151,.08);
+  overflow:hidden;
+  z-index:1;
+}
+.glass::after{
+  content:"";
+  position:absolute;
+  left:7%;
+  top:10%;
+  width:10%;
+  height:58%;
+  border-radius:999px;
+  background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,255,255,0));
+  filter:blur(2px);
+  pointer-events:none;
+}
+.rim{
+  position:absolute;
+  left:8%;
+  right:8%;
+  top:2%;
+  height:12%;
+  border:2px solid rgba(166,162,177,.42);
+  border-radius:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(245,239,251,.24));
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,.95),
+    0 2px 7px rgba(140,128,157,.08);
+  z-index:2;
+}
+.rim::after{
+  content:"";
+  position:absolute;
+  left:18%;
+  right:18%;
+  top:28%;
+  height:2px;
+  border-radius:999px;
+  background:rgba(255,255,255,.82);
+}
+
+/* 底の銀ラインは撤廃。
+   絵文字が器の丸みに沿って溜まることで、底の位置を表現します。 */
+/* 落ちてくる絵文字を少し大きく */
+.ball{
+  position:absolute;
+  width:60px;
+  height:60px;
+  display:grid;
+  place-items:center;
+  font-size:54px;
+  line-height:1;
+  pointer-events:none;
+  will-change:transform;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.12));
+  z-index:4;
+}
+.ball::after{
+  content:"";
+  position:absolute;
+  inset:2px;
+  border-radius:50%;
+  box-shadow:0 0 8px rgba(255,255,255,.18);
+  pointer-events:none;
+}
+
+.buttons{
+  width:min(100%,430px);
+  margin:auto;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+}
+.btn{
+  position:relative;
+  min-height:64px;
+  border:1.5px solid rgba(188,166,194,.72);
+  border-top-color:rgba(255,255,255,.92);
+  border-left-color:rgba(255,255,255,.78);
+  border-radius:18px;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.96),rgba(247,242,252,.78));
+  color:#57515f;
+  padding:7px 3px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  cursor:pointer;
+  font:inherit;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  box-shadow:
+    0 3px 10px rgba(130,116,150,.11),
+    inset 0 1px 1px rgba(255,255,255,.95);
+  overflow:visible;
+  transform-origin:center;
+  transition:transform .12s ease,filter .12s ease,box-shadow .12s ease;
+}
+.btn::before{
+  content:"";
+  position:absolute;
+  left:8px;
+  right:8px;
+  top:5px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent);
+  pointer-events:none;
+}
+.btn:active,
+.btn.is-popping{
+  transform:scale(.93);
+  filter:brightness(.98);
+  box-shadow:
+    0 1px 4px rgba(130,116,150,.12),
+    inset 0 1px 4px rgba(150,140,165,.08);
+}
+.btn.is-popping{
+  animation:buttonPop .28s cubic-bezier(.2,1.45,.35,1);
+}
+.emoji{font-size:25px;line-height:1}
+.label{
+  font-family:"Yomogi","Zen Maru Gothic",sans-serif;
+  font-size:12px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:100%;
+}
+.count{
+  font-size:11px;
+  color:#9992a0;
+  font-variant-numeric:tabular-nums;
+}
+
+.btn:nth-child(1){background:linear-gradient(145deg,#fff9fc,#f7eaf5)}
+.btn:nth-child(2){background:linear-gradient(145deg,#fbfaff,#eeeafd)}
+.btn:nth-child(3){background:linear-gradient(145deg,#fffafd,#f9edf4)}
+.btn:nth-child(4){background:linear-gradient(145deg,#fffaf6,#fff0e7)}
+.btn:nth-child(5){background:linear-gradient(145deg,#faffff,#eaf5f3)}
+.btn:nth-child(6){background:linear-gradient(145deg,#fffafd,#fcecf4)}
+.btn:nth-child(7){background:linear-gradient(145deg,#fbfaff,#eeeafd)}
+.btn:nth-child(8){background:linear-gradient(145deg,#fbf9ff,#eeeafb)}
+
+
+/* カードごとに、背景色に寄り添った「光沢のある濃色」の縁 */
+.btn:nth-child(1){border-color:#d6a8c7;box-shadow:0 3px 10px rgba(130,116,150,.11),inset 0 1px 1px #fff}
+.btn:nth-child(2){border-color:#b9b0dc;box-shadow:0 3px 10px rgba(130,116,150,.11),inset 0 1px 1px #fff}
+.btn:nth-child(3){border-color:#d8afc5;box-shadow:0 3px 10px rgba(130,116,150,.11),inset 0 1px 1px #fff}
+.btn:nth-child(4){border-color:#e0b38f;box-shadow:0 3px 10px rgba(130,116,150,.11),inset 0 1px 1px #fff}
+.btn:nth-child(5){border-color:#a9d0ca;box-shadow:0 3px 10px rgba(130,116,150,.11),inset 0 1px 1px #fff}
+.btn:nth-child(6){border-color:#ddaac1;box-shadow:0 3px 10px rgba(130,116,150,.11),inset 0 1px 1px #fff}
+.btn:nth-child(7){border-color:#b8addb;box-shadow:0 3px 10px rgba(130,116,150,.11),inset 0 1px 1px #fff}
+.btn:nth-child(8){border-color:#b8addb;box-shadow:0 3px 10px rgba(130,116,150,.11),inset 0 1px 1px #fff}
+
+.btn::after{
+  content:"";
+  position:absolute;
+  inset:1px;
+  border-radius:17px;
+  border-top:1px solid rgba(255,255,255,.82);
+  border-left:1px solid rgba(255,255,255,.42);
+  pointer-events:none;
+}
+
+.reset{
+  font-family:"Yomogi","Zen Maru Gothic",sans-serif;
+  display:block;
+  margin:3px auto 0;
+  border:0;
+  background:none;
+  color:#8a8191;
+  font:inherit;
+  font-size:12px;
+  text-decoration:none;
+  cursor:pointer;
+  padding:9px 12px;
+  touch-action:manipulation;
+  position:relative;
+}
+.reset::before,
+.reset::after{
+  content:"✦";
+  color:#c9add9;
+  font-size:9px;
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+}
+.reset::before{left:-2px}
+.reset::after{right:-2px}
+
+/* ボタンから左右へ、透明感のあるピンク＆水色のシャボン玉 */
+.bubble{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:var(--size,13px);
+  height:var(--size,13px);
+  border:1.5px solid rgba(255,255,255,.96);
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 28% 23%,
+      rgba(255,255,255,1) 0 10%,
+      rgba(255,225,242,.68) 16%,
+      rgba(255,173,220,.28) 42%,
+      rgba(198,223,255,.18) 67%,
+      rgba(255,255,255,0) 74%);
+  box-shadow:
+    0 0 7px rgba(255,183,222,.55),
+    0 0 13px rgba(187,213,255,.28),
+    inset 1px 1px 3px rgba(255,255,255,.9);
+  pointer-events:none;
+  z-index:20;
+  animation:bubbleFly var(--duration,820ms) ease-out forwards;
+}
+.bubble:nth-child(odd){
+  background:
+    radial-gradient(circle at 28% 23%,
+      rgba(255,255,255,1) 0 10%,
+      rgba(214,237,255,.7) 16%,
+      rgba(155,213,255,.28) 42%,
+      rgba(225,204,255,.18) 67%,
+      rgba(255,255,255,0) 74%);
+  box-shadow:
+    0 0 7px rgba(168,215,255,.58),
+    0 0 13px rgba(207,191,255,.3),
+    inset 1px 1px 3px rgba(255,255,255,.92);
+}
+
+.bubble-pink{filter:saturate(1.12)}
+.bubble-blue{filter:hue-rotate(10deg) saturate(.92)}
+.bubble-gold{
+  background:
+    radial-gradient(circle at 28% 23%,
+      rgba(255,255,255,1) 0 10%,
+      rgba(255,248,202,.88) 16%,
+      rgba(255,215,104,.38) 42%,
+      rgba(255,190,90,.18) 67%,
+      rgba(255,255,255,0) 74%);
+  border-color:rgba(255,248,215,.98);
+  box-shadow:
+    0 0 8px rgba(255,211,103,.68),
+    0 0 15px rgba(255,238,174,.32),
+    inset 1px 1px 3px rgba(255,255,255,.95);
+}
+@keyframes bubbleFly{
+  0%{
+    opacity:0;
+    transform:translate(-50%,-50%) translate(0,4px) scale(.35);
+  }
+  12%{opacity:1}
+  48%{opacity:.9}
+  100%{
+    opacity:0;
+    transform:
+      translate(-50%,-50%)
+      translate(var(--dx),var(--dy))
+      scale(1.08);
+  }
+}
+@keyframes buttonPop{
+  0%{transform:scale(1)}
+  35%{transform:scale(.91)}
+  70%{transform:scale(1.035)}
+  100%{transform:scale(1)}
+}
+@keyframes twinkle{
+  0%,100%{opacity:.35;transform:scale(.85)}
+  50%{opacity:.9;transform:scale(1.15)}
+}
+
+
+.records{
+  width:min(100%,430px);
+  margin:10px auto 0;
+  padding:0 2px;
+}
+.records-toggle{
+  width:100%;
+  border:1px solid rgba(196,174,211,.68);
+  border-radius:18px;
+  background:linear-gradient(145deg,rgba(255,255,255,.84),rgba(247,239,252,.72));
+  color:#756d7c;
+  padding:9px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  font-family:"Yomogi","Zen Maru Gothic",sans-serif;
+  font-size:13px;
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  box-shadow:0 3px 10px rgba(130,116,150,.08),inset 0 1px 1px rgba(255,255,255,.95);
+}
+.records-toggle:active{transform:scale(.98)}
+.records-arrow{font-family:"Zen Maru Gothic",sans-serif;font-size:14px;transition:transform .18s ease}
+.records-toggle[aria-expanded="true"] .records-arrow{transform:rotate(180deg)}
+.records-panel{
+  margin-top:7px;
+  padding:5px 8px 8px;
+  display:grid;
+  gap:7px;
+}
+.record-day{
+  border:1px solid rgba(215,195,221,.72);
+  border-radius:16px;
+  padding:9px 12px 10px;
+  background:rgba(255,255,255,.62);
+  box-shadow:0 2px 8px rgba(130,116,150,.06),inset 0 1px 1px rgba(255,255,255,.92);
+}
+.record-date{
+  font-family:"Yomogi","Zen Maru Gothic",sans-serif;
+  color:#8b7d93;
+  font-size:13px;
+  margin-bottom:4px;
+}
+.record-items{display:grid;gap:2px}
+.record-item{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:#625b68;
+  font-size:13px;
+  line-height:1.45;
+}
+.record-item .record-emoji{font-size:17px;min-width:24px}
+.record-item .record-count{font-variant-numeric:tabular-nums;color:#77707d}
+.records-empty{
+  text-align:center;
+  color:#aaa1ae;
+  font-family:"Yomogi","Zen Maru Gothic",sans-serif;
+  font-size:12px;
+  padding:5px 0 2px;
+}
+@media(max-width:380px){
+  .btn{min-height:58px}
+  .label{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .stage::before,.stage::after{animation:none}
+  .btn,.btn.is-popping{transition:none;animation:none}
+  .bubble{animation:none;display:none}
+}
+</style>
+</head>
+<body>
+<main id="app">
+  <div class="head"><span class="total-deco" aria-hidden="true">🌟</span><span>合計</span><span id="total" class="total">0</span><span class="total-deco total-deco-right" aria-hidden="true">🌟</span></div>
+
+  <div id="stage" class="stage" aria-label="感情の器">
+    <div class="glass"></div>
+    <div class="rim"></div>
+  </div>
+
+  <div id="buttons" class="buttons"></div>
+  <button type="button" id="reset" class="reset">今すぐ空にする</button>
+
+  <section class="records" aria-label="きろく">
+    <button type="button" id="recordsToggle" class="records-toggle" aria-expanded="false">
+      <span>✦ きろく ✦</span>
+      <span class="records-arrow" aria-hidden="true">⌄</span>
+    </button>
+    <div id="recordsPanel" class="records-panel" hidden></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const moods=[
+    ["😵‍💫","ヘトヘト"],["😴","ねむい"],["😖","切ない"],["🔥","がんばるぞ"],
+    ["❤️‍🩹","回復中"],["💚","Love"],["🎶","音楽relax"],["💙","すき"]
+  ];
+
+  const STORAGE_KEY="kimochi-no-utsuwa-records-v1";
+  const ACTIVE_KEY="kimochi-no-utsuwa-active-v1";
+  const MAX_RECORDS=31;
+
+  const stage=document.getElementById("stage");
+  const buttons=document.getElementById("buttons");
+  const total=document.getElementById("total");
+  const reset=document.getElementById("reset");
+  const recordsToggle=document.getElementById("recordsToggle");
+  const recordsPanel=document.getElementById("recordsPanel");
+  const counts=Array(moods.length).fill(0);
+  const balls=[];
+  let raf=0;
+
+  function dayKey(date=new Date()){
+    const d=new Date(date);
+    d.setHours(d.getHours()-4);
+    const y=d.getFullYear();
+    const m=String(d.getMonth()+1).padStart(2,"0");
+    const day=String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function loadRecords(){
+    try{
+      const data=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
+      return Array.isArray(data)?data:[];
+    }catch(e){return []}
+  }
+
+  function saveRecords(records){
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(records.slice(-MAX_RECORDS)));}catch(e){}
+  }
+
+  function saveActive(){
+    try{
+      localStorage.setItem(ACTIVE_KEY,JSON.stringify({
+        day:dayKey(),
+        counts:[...counts]
+      }));
+    }catch(e){}
+  }
+
+  function restoreActive(){
+    try{
+      const data=JSON.parse(localStorage.getItem(ACTIVE_KEY)||"null");
+      if(!data || data.day!==dayKey() || !Array.isArray(data.counts)) return false;
+      for(let i=0;i<moods.length;i++) counts[i]=Number(data.counts[i])||0;
+      return true;
+    }catch(e){return false}
+  }
+
+  function clearActiveStorage(){
+    try{localStorage.removeItem(ACTIVE_KEY)}catch(e){}
+  }
+
+  function snapshotCurrentRecord(dateKey=dayKey()){
+    const items=[];
+    for(let i=0;i<moods.length;i++){
+      if(counts[i]>0){
+        items.push({emoji:moods[i][0],label:moods[i][1],count:counts[i]});
+      }
+    }
+    return items.length?{date:dateKey,items}:null;
+  }
+
+  function archiveCurrentDay(dateKey=dayKey()){
+    const record=snapshotCurrentRecord(dateKey);
+    if(!record) return;
+
+    const records=loadRecords().filter(r=>r && r.date!==record.date);
+    records.push(record);
+    records.sort((a,b)=>a.date.localeCompare(b.date));
+    saveRecords(records);
+  }
+
+  function renderRecords(){
+    const records=loadRecords().sort((a,b)=>b.date.localeCompare(a.date));
+    recordsPanel.innerHTML="";
+
+    if(!records.length){
+      recordsPanel.innerHTML='<div class="records-empty">まだ記録はありません ✦</div>';
+      return;
+    }
+
+    records.forEach(record=>{
+      const card=document.createElement("div");
+      card.className="record-day";
+
+      const date=document.createElement("div");
+      date.className="record-date";
+      date.textContent=formatRecordDate(record.date);
+      card.appendChild(date);
+
+      const items=document.createElement("div");
+      items.className="record-items";
+
+      (record.items||[]).forEach(item=>{
+        const row=document.createElement("div");
+        row.className="record-item";
+
+        const emoji=document.createElement("span");
+        emoji.className="record-emoji";
+        emoji.textContent=item.emoji;
+
+        const label=document.createElement("span");
+        label.textContent=item.label||"";
+
+        const count=document.createElement("span");
+        count.className="record-count";
+        count.textContent=`×${item.count}`;
+
+        row.append(emoji,label,count);
+        items.appendChild(row);
+      });
+
+      card.appendChild(items);
+      recordsPanel.appendChild(card);
+    });
+  }
+
+  function formatRecordDate(key){
+    const [y,m,d]=key.split("-").map(Number);
+    const date=new Date(y,m-1,d);
+    const weekdays=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    return `${m}/${d} ${weekdays[date.getDay()]}`;
+  }
+
+  function update(){
+    total.textContent=counts.reduce((a,b)=>a+b,0);
+    counts.forEach((c,i)=>{
+      document.getElementById("c"+i).textContent=c;
+    });
+    saveActive();
+  }
+
+  moods.forEach((m,i)=>{
+    const b=document.createElement("button");
+    b.type="button";
+    b.className="btn";
+    b.innerHTML=`<span class="emoji">${m[0]}</span><span class="label">${m[1]}</span><span class="count" id="c${i}">0</span>`;
+
+    b.addEventListener("pointerdown",()=>popButton(b));
+    b.addEventListener("click",()=>drop(i));
+    buttons.appendChild(b);
+  });
+
+  function popButton(button){
+    button.classList.remove("is-popping");
+    void button.offsetWidth;
+    button.classList.add("is-popping");
+
+    const rect=button.getBoundingClientRect();
+
+    for(let i=0;i<15;i++){
+      const bubble=document.createElement("span");
+      bubble.className="bubble bubble-"+(i%3===0?"gold":i%2===0?"pink":"blue");
+
+      const side=i%2===0?-1:1;
+      const spread=24+Math.random()*58;
+      const rise=-(10+Math.random()*58)+(Math.random()-.5)*20;
+      const size=8+Math.random()*12;
+      const duration=680+Math.random()*360;
+
+      bubble.style.setProperty("--dx",`${side*spread}px`);
+      bubble.style.setProperty("--dy",`${rise}px`);
+      bubble.style.setProperty("--size",`${size}px`);
+      bubble.style.setProperty("--duration",`${duration}ms`);
+      bubble.style.left=`${rect.left+rect.width/2}px`;
+      bubble.style.top=`${rect.top+rect.height/2}px`;
+
+      document.body.appendChild(bubble);
+      setTimeout(()=>bubble.remove(),duration+80);
+    }
+
+    setTimeout(()=>button.classList.remove("is-popping"),320);
+  }
+
+  const BALL_SIZE=60;
+  const BALL_GAP=0;
+
+  function drop(i, countIt=true){
+    if(countIt){
+      counts[i]++;
+      update();
+    }
+
+    const s=stage.getBoundingClientRect();
+    const left=s.width*.13;
+    const right=s.width*.87-BALL_SIZE;
+
+    const b={
+      el:document.createElement("div"),
+      x:left+Math.random()*Math.max(0,right-left),
+      y:-BALL_SIZE,
+      vx:(Math.random()-.5)*2.0,
+      vy:0,
+      emoji:moods[i][0],
+      floor:s.height*.88
+    };
+
+    b.el.className="ball";
+    b.el.textContent=b.emoji;
+    stage.appendChild(b.el);
+    balls.push(b);
+
+    if(!raf) raf=requestAnimationFrame(tick);
+  }
+
+  // 保存されている「今日の個数」だけを使って、
+  // 器を開き直したときに上から自然に落とし直す。
+  function restoreBallsFromCounts(){
+    const queue=[];
+    counts.forEach((count,i)=>{
+      for(let n=0;n<count;n++) queue.push(i);
+    });
+
+    // 同時に全部落とさず、少しずつ落とすことで
+    // いつもの「わちゃっ」とした自然な落下を再現。
+    queue.forEach((i,n)=>{
+      setTimeout(()=>drop(i,false), 90*n);
+    });
+  }
+
+  function curvedWalls(yCenter){
+    const W=stage.clientWidth;
+    const H=stage.clientHeight;
+    const rX=W*.80*.34;
+    const rY=H*.92*.40;
+    const glassLeft=W*.10;
+    const glassRight=W*.90;
+    const glassBottom=H*.96;
+    const transition=glassBottom-rY;
+
+    if(yCenter<=transition){
+      return {min:glassLeft,max:glassRight-BALL_SIZE};
+    }
+
+    const t=Math.min(1,Math.max(0,(yCenter-transition)/rY));
+    const inward=rX*(1-Math.sqrt(Math.max(0,1-t*t)));
+    return {min:glassLeft+inward,max:glassRight-BALL_SIZE-inward};
+  }
+
+  function tick(){
+    for(let i=0;i<balls.length;i++){
+      const b=balls[i];
+      b.vy+=.34;
+      b.x+=b.vx;
+      b.y+=b.vy;
+
+      if(b.y>b.floor){
+        b.y=b.floor;
+        if(Math.abs(b.vy)>1.0){
+          // 底では「ぽよん」。ただしエネルギーはかなり早く失う。
+          b.vy*=-.18;
+          b.vx+=(Math.random()-.5)*.28;
+        }else{
+          b.vy=0;
+          b.vx*=.82;
+        }
+      }
+
+      const walls=curvedWalls(b.y+BALL_SIZE/2);
+      if(b.x<walls.min){
+        b.x=walls.min;
+        b.vx=Math.abs(b.vx)*.45;
+      }else if(b.x>walls.max){
+        b.x=walls.max;
+        b.vx=-Math.abs(b.vx)*.45;
+      }
+
+      // 見た目の「重なり」は許しつつ、完全な同一点だけは避ける。
+      // ここを大きくしすぎないことで、以前の自然なわちゃわちゃ感を維持。
+      for(let j=0;j<i;j++){
+        const o=balls[j];
+        const dx=b.x-o.x;
+        const dy=b.y-o.y;
+        const d=Math.hypot(dx,dy);
+        const minD=44;
+
+        if(d>0&&d<minD){
+          const nx=dx/d;
+          const ny=dy/d;
+          const push=(minD-d)*.42;
+          b.x+=nx*push;
+          b.y+=ny*push;
+          o.x-=nx*push;
+          o.y-=ny*push;
+
+          // 衝突による上向きの跳ね返りは「チクッ」と感じる程度。
+          if(Math.abs(dy)>1){
+            b.vy*=.74;
+            o.vy*=.88;
+          }
+          b.vx+=nx*.07;
+          o.vx-=nx*.04;
+        }
+      }
+
+      // 底付近では細かな揺れを少しずつ吸収して、最終的に静かになる。
+      if(b.y>b.floor-7 && Math.abs(b.vy)<1.5){
+        b.vy*=.65;
+        b.vx*=.96;
+      }
+
+      b.el.style.transform=`translate3d(${b.x}px,${b.y}px,0)`;
+    }
+
+    raf=balls.length?requestAnimationFrame(tick):0;
+  }
+
+  function clear(){
+    counts.fill(0);
+    balls.splice(0).forEach(b=>b.el.remove());
+    clearActiveStorage();
+    updateWithoutSaving();
+  }
+
+  function updateWithoutSaving(){
+    total.textContent=counts.reduce((a,b)=>a+b,0);
+    counts.forEach((c,i)=>{
+      document.getElementById("c"+i).textContent=c;
+    });
+  }
+
+  function finishDay(){
+    const oldActive=(()=>{
+      try{return JSON.parse(localStorage.getItem(ACTIVE_KEY)||"null")}catch(e){return null}
+    })();
+
+    if(oldActive && oldActive.day && oldActive.day!==dayKey() && Array.isArray(oldActive.counts)){
+      const previous=[...counts];
+      for(let i=0;i<moods.length;i++) counts[i]=Number(oldActive.counts[i])||0;
+      archiveCurrentDay(oldActive.day);
+      counts.splice(0,counts.length,...previous);
+    }else{
+      archiveCurrentDay(dayKey());
+    }
+
+    counts.fill(0);
+    balls.splice(0).forEach(b=>b.el.remove());
+    clearActiveStorage();
+    updateWithoutSaving();
+    renderRecords();
+  }
+
+  reset.addEventListener("click",clear);
+
+  recordsToggle.addEventListener("click",()=>{
+    const open=recordsToggle.getAttribute("aria-expanded")==="true";
+    recordsToggle.setAttribute("aria-expanded",String(!open));
+    recordsPanel.hidden=open;
+    if(!open) renderRecords();
+  });
+
+  function nextReset(){
+    const n=new Date();
+    n.setHours(4,0,0,0);
+    if(n<=new Date()) n.setDate(n.getDate()+1);
+    setTimeout(()=>{finishDay();nextReset()},n-Date.now());
+  }
+
+  // ページを4時以降に開き直した場合も、前日の保存を取りこぼさない。
+  (function prepareDay(){
+    try{
+      const active=JSON.parse(localStorage.getItem(ACTIVE_KEY)||"null");
+      if(active && active.day && active.day!==dayKey() && Array.isArray(active.counts)){
+        const temp=[...counts];
+        for(let i=0;i<moods.length;i++) counts[i]=Number(active.counts[i])||0;
+        archiveCurrentDay(active.day);
+        counts.splice(0,counts.length,...temp);
+        clearActiveStorage();
+      }
+    }catch(e){}
+  })();
+
+  const restoredToday=restoreActive();
+  updateWithoutSaving();
+  renderRecords();
+
+  // 今日の記録が残っていた場合だけ、器の中身を再現する。
+  if(restoredToday){
+    restoreBallsFromCounts();
+  }
+
+  nextReset();
+})();
+</script>
+</body>
+</html>
