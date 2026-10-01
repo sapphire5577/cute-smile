@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>きもちの器 v1.3 trail stable</title>
+<title>きもちの器 v1.4 trail stop</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Yomogi&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
@@ -508,8 +508,8 @@ main{
   // ボタンごとに、落下中に引っ提げてくる小粒エフェクト。
   // 5・6・8番目はキラキラも混ざる。
   const TRAIL_EMOJIS=[
-    ["🌀"], ["🫧"], ["💓"], ["💥"],
-    ["🎗️","✨"], ["💛","✨"], ["♪"], ["🩵","✨"]
+    ["🌀"], ["🫧"], ["💓","💧"], ["💥","🌟"],
+    ["🎗️","✨"], ["💛","✨"], ["♪","♫"], ["🩵","✨"]
   ];
 
   let raf=0;
@@ -756,7 +756,9 @@ main{
       emoji:moods[i][0],
       floor:s.height*.88,
       trailTimer:40+Math.random()*45,
-      trailIndex:i
+      trailIndex:i,
+      trailActive:true,
+      hasStartedFalling:false
     };
 
     b.el.className="ball";
@@ -808,22 +810,25 @@ main{
       b.x+=b.vx;
       b.y+=b.vy;
 
-      // 落下中だけ小粒を次々と放つ。
-      // 底に着いたら新しい粒は止まり、すでに出た粒だけがふわっと消える。
-      // 十分に「落下中」のときだけ出す。
-      // 底での細かな跳ね・他の絵文字との押し合いでは発生させない。
-      if(b.y < b.floor-18 && b.vy > 1.2){
-        b.trailTimer-=16.7;
-        if(b.trailTimer<=0){
-          spawnTrailEffect(b,b.trailIndex);
-          b.trailTimer=58+Math.random()*48;
+      // エフェクトは「落下している間」だけ。
+      // 一度でも着地・着弾したら trailActive=false にして、
+      // その後どれだけ押し合い・ぽよん・微振動が起きても二度と出さない。
+      if(b.trailActive){
+        if(b.y < b.floor-18 && b.vy > 1.2){
+          b.hasStartedFalling=true;
+          b.trailTimer-=16.7;
+          if(b.trailTimer<=0){
+            spawnTrailEffect(b,b.trailIndex);
+            b.trailTimer=58+Math.random()*48;
+          }
+        }else if(b.hasStartedFalling && b.y >= b.floor-18){
+          b.trailActive=false;
         }
-      }else{
-        b.trailTimer=70;
       }
 
       if(b.y>b.floor){
         b.y=b.floor;
+        b.trailActive=false;
         if(Math.abs(b.vy)>1.0){
           // 底では「ぽよん」。ただしエネルギーはかなり早く失う。
           b.vy*=-.18;
@@ -853,6 +858,12 @@ main{
         const minD=44;
 
         if(d>0&&d<minD){
+          // 上から別の絵文字に乗った瞬間も「落下終了」。
+          // 以後は底で押し合っても、この子自身からエフェクトは出さない。
+          if(b.trailActive && b.vy>0 && b.y<o.y){
+            b.trailActive=false;
+          }
+
           const nx=dx/d;
           const ny=dy/d;
           const push=(minD-d)*.42;
