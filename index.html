@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>きもちの器 v1.1 trail</title>
+<title>きもちの器 v1.3 trail stable</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Yomogi&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
@@ -162,22 +162,18 @@ main{
    器の中で自然に漂って、落下が終わるとふわっと消えます。 */
 .trail-effect{
   position:absolute;
-  width:22px;
-  height:22px;
+  width:44px;
+  height:44px;
   display:grid;
   place-items:center;
-  font-size:16px;
+  font-size:32px;
   line-height:1;
   pointer-events:none;
   z-index:3;
   will-change:transform,opacity;
   filter:drop-shadow(0 1px 2px rgba(0,0,0,.08));
   transform-origin:center;
-  animation:trailPop .16s ease-out;
-}
-@keyframes trailPop{
-  0%{opacity:0;transform:translate3d(0,0,0) scale(.55)}
-  100%{opacity:1;transform:translate3d(0,0,0) scale(1)}
+  opacity:0;
 }
 
 .buttons{
@@ -307,9 +303,11 @@ main{
 .reset::before{left:-2px}
 .reset::after{right:-2px}
 
-/* ボタンから左右へ、透明感のあるピンク＆水色のシャボン玉 */
+/* ボタンから左右へ、透明感のあるピンク＆水色のシャボン玉
+   position:fixed にして、iPhoneでページをスクロールしたときも
+   getBoundingClientRect() の座標とズレないようにする。 */
 .bubble{
-  position:absolute;
+  position:fixed;
   left:50%;
   top:50%;
   width:var(--size,13px);
@@ -508,7 +506,11 @@ main{
   const trailEffects=[];
 
   // ボタンごとに、落下中に引っ提げてくる小粒エフェクト。
-  const TRAIL_EMOJIS=["🌀","🫧","💓","💥","🎗️","💛","♪","🩵"];
+  // 5・6・8番目はキラキラも混ざる。
+  const TRAIL_EMOJIS=[
+    ["🌀"], ["🫧"], ["💓"], ["💥"],
+    ["🎗️","✨"], ["💛","✨"], ["♪"], ["🩵","✨"]
+  ];
 
   let raf=0;
 
@@ -686,7 +688,7 @@ main{
   function spawnTrailEffect(b,i){
     const el=document.createElement("span");
     el.className="trail-effect";
-    el.textContent=TRAIL_EMOJIS[i];
+    el.textContent=TRAIL_EMOJIS[i][Math.floor(Math.random()*TRAIL_EMOJIS[i].length)];
 
     // 本体の少し下〜後ろから「シュポッ」と出す。
     const px=b.x+BALL_SIZE*.5+(Math.random()-.5)*20;
@@ -705,7 +707,8 @@ main{
       scale:.62+Math.random()*.22
     };
 
-    el.style.fontSize=`${12+Math.random()*6}px`;
+    el.style.fontSize=`${24+Math.random()*12}px`;
+    el.style.opacity="1";
     stage.appendChild(el);
     trailEffects.push(p);
   }
@@ -807,7 +810,9 @@ main{
 
       // 落下中だけ小粒を次々と放つ。
       // 底に着いたら新しい粒は止まり、すでに出た粒だけがふわっと消える。
-      if(b.y < b.floor-6 && b.vy > .8){
+      // 十分に「落下中」のときだけ出す。
+      // 底での細かな跳ね・他の絵文字との押し合いでは発生させない。
+      if(b.y < b.floor-18 && b.vy > 1.2){
         b.trailTimer-=16.7;
         if(b.trailTimer<=0){
           spawnTrailEffect(b,b.trailIndex);
